@@ -114,6 +114,7 @@ def make_gif(
         watershed_geom = watershed_poly.geometry.iloc[0]
     else:
         watershed_geom = watershed_poly
+
     # Get the bounds of the watershed
     minx, miny, maxx, maxy = watershed_geom.bounds
     minx -= buffer

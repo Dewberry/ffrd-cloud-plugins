@@ -4,7 +4,7 @@ import shutil
 import tempfile
 
 import boto3
-from data_processing.gif import (
+from pyprocesses.utils.gifs import (
     fetch_watershed_geom,
     generate_zarr_file_paths,
     make_gif,
@@ -12,7 +12,11 @@ from data_processing.gif import (
 )
 from dotenv import find_dotenv, load_dotenv
 
-load_dotenv(find_dotenv())
+try:
+    load_dotenv(find_dotenv())
+except:
+    logging.debug("no .env file found")
+
 session = boto3.session.Session()
 s3_client = session.client("s3")
 
