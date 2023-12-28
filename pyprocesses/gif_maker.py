@@ -4,7 +4,7 @@ import shutil
 import tempfile
 
 import boto3
-from pyprocesses.utils.gifs import (
+from utils.gifs import (
     fetch_watershed_geom,
     generate_zarr_file_paths,
     make_gif,
@@ -77,11 +77,11 @@ def main(params: dict):
 
 
 # main(
-#     {
-#         "start_date": "2009-09-17",
-#         "duration": 72,
-#         "precip_source_location": "s3://tempest/transforms/aorc/precipitation/",
-#         "watershed_file_location": "/vsis3/tempest/watersheds/kanawha/kanawha-basin.geojson",
-#         "output_bucket": "hms-bucket",
-#     }
+    # {
+    #     "start_date": "2009-09-17",
+    #     "duration": 72,
+    #     "precip_source_location": "s3://tempest/transforms/aorc/precipitation/",
+    #     "watershed_file_location": "/vsis3/tempest/watersheds/kanawha/kanawha-basin.geojson",
+    #     "output_bucket": "hms-bucket",
+    # }
 # )

@@ -1,6 +1,6 @@
 import sys
 
-from pyprocesses.gif_maker import PLUGIN_PARAMS, main
+from gif_maker import PLUGIN_PARAMS, main
 from papipyplug import parse_input, plugin_logger, print_results
 
 if __name__ == "__main__":
