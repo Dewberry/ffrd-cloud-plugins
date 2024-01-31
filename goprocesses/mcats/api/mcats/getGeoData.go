@@ -1,7 +1,6 @@
 package mcats
 
 import (
-	"app/ccmock"
 	"app/controller"
 	sharedutils "app/shared_utils"
 	"encoding/json"
@@ -38,27 +37,27 @@ type GeomRequest struct {
 	Geom        string `json:"geom" db:"geom"`
 }
 
-func RefreshGeoDataOnStartUp(ctrl *controller.Controller, p *ccmock.FFRDProject) {
-	for _, model := range p.Models {
-		// Call refreshGeoCache for 'mesh'
-		if err := refreshGeoCache(ctrl, model.GeometryFile, "breakline", model.Projection); err != nil {
-			errMsg := fmt.Errorf("failed to refresh mesh cache for %s: %s", model.Name, err.Error())
-			log.Error(errMsg)
-		}
+// func RefreshGeoDataOnStartUp(ctrl *controller.Controller, p *ccmock.FFRDProject) {
+// 	for _, model := range p.Models {
+// 		// Call refreshGeoCache for 'mesh'
+// 		if err := refreshGeoCache(ctrl, model.GeometryFile, "breakline", model.Projection); err != nil {
+// 			errMsg := fmt.Errorf("failed to refresh mesh cache for %s: %s", model.Name, err.Error())
+// 			log.Error(errMsg)
+// 		}
 
-		// Call refreshGeoCache for 'breakline'
-		if err := refreshGeoCache(ctrl, model.GeometryFile, "mesh", model.Projection); err != nil {
-			errMsg := fmt.Errorf("failed to refresh breakline cache for %s: %s", model.Name, err.Error())
-			log.Error(errMsg)
-		}
+// 		// Call refreshGeoCache for 'breakline'
+// 		if err := refreshGeoCache(ctrl, model.GeometryFile, "mesh", model.Projection); err != nil {
+// 			errMsg := fmt.Errorf("failed to refresh breakline cache for %s: %s", model.Name, err.Error())
+// 			log.Error(errMsg)
+// 		}
 
-		// Call refreshGeoCache for 'ras 2d domains'
-		if err := refreshGeoCache(ctrl, model.GeometryFile, "twodarea", model.Projection); err != nil {
-			errMsg := fmt.Errorf("failed to refresh twodarea cache for %s: %s", model.Name, err.Error())
-			log.Error(errMsg)
-		}
-	}
-}
+// 		// Call refreshGeoCache for 'ras 2d domains'
+// 		if err := refreshGeoCache(ctrl, model.GeometryFile, "twodarea", model.Projection); err != nil {
+// 			errMsg := fmt.Errorf("failed to refresh twodarea cache for %s: %s", model.Name, err.Error())
+// 			log.Error(errMsg)
+// 		}
+// 	}
+// }
 
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
 // The function takes a controller object, the filePath of the geospatial data, and a string indicating the type of
@@ -74,10 +73,10 @@ func getFilteredGeoData(ctrl *controller.Controller, filePath, geoElement, proje
 	} else if projection == "WktUSACEProjFt37_5" {
 		projection = sharedutils.WktUSACEProjFt37_5
 	}
-	// err := tools.GetGeospatialData(&gd, ctrl.S3FS, filePath, projection, 4326)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error in GetGeospatialData for %s: %s", geoElement, err.Error())
-	// }
+	err := tools.GetGeospatialData(&gd, ctrl.S3FS, filePath, projection, 4326)
+	if err != nil {
+		return nil, fmt.Errorf("error in GetGeospatialData for %s: %s", geoElement, err.Error())
+	}
 
 	// Filter features
 	features := gd.Features[path.Base(filePath)]

@@ -2,18 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
-
 	"app/controller"
-
-	"github.com/Dewberry/s3api/blobstore"
+	"app/mcats"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -61,29 +57,11 @@ func main() {
 	}
 
 	log.Info("Successfully connected to database!")
-	var authLvl int
-	authLvlString := os.Getenv("AUTH_LEVEL")
-	if authLvlString == "" {
-		authLvl = 0
-		log.Warn("Fine Grained Access Control disabled")
-	} else {
-		authLvl, err = strconv.Atoi(authLvlString)
-		if err != nil {
-			log.Fatalf("could not convert AUTH_LEVEL env variable to integer: %v", err)
-		}
-	}
-	bh, err := blobstore.NewBlobHandler(".env.json", authLvl)
-	if err != nil {
-		errMsg := fmt.Errorf("failed to initialize a blobhandler %s", err.Error())
-		log.Fatal(errMsg)
-	}
-
-
 
 	// log.Info("S3 Inventory complete")
 
 	e := echo.New()
-	
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -93,8 +71,8 @@ func main() {
 
 	e.GET("/ping", ctrl.Ping)
 	// // filestore / mcat
-	// e.GET("/mcat/break_line", mcats.GetGeoJSONHandler(project, ctrl))
-	// e.GET("/mcat/mesh_line", mcats.GetGeoJSONHandler(project, ctrl))
+	e.GET("/mcat/break_line", mcats.GetGeoJSONHandler(ctrl))
+	e.GET("/mcat/mesh_line", mcats.GetGeoJSONHandler(ctrl))
 	// e.PATCH("/mcat/refresh_mesh_line", mcats.GeoRefreshHandler(project, ctrl))
 	// e.PATCH("/mcat/refresh_break_line", mcats.GeoRefreshHandler(project, ctrl))
 	// e.PATCH("/mcat/refresh_twod_area", mcats.GeoRefreshHandler(project, ctrl))
@@ -127,8 +105,8 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
-	if bh.Config.AuthLevel > 0 {
-		if err := bh.DB.Close(); err != nil {
+	if ctrl.Bh.Config.AuthLevel > 0 {
+		if err := ctrl.Bh.DB.Close(); err != nil {
 			log.Error(err)
 		} else {
 			log.Info("closed connection to database")

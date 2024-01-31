@@ -1,11 +1,16 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/USACE/filestore"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -14,19 +19,36 @@ import (
 )
 
 type Controller struct {
-	DB *sqlx.DB
-	// S3FS *filestore.S3FS
-	// FS   *filestore.FileStore
+	DB   *sqlx.DB
+	S3FS *filestore.S3FS
+	FS   *filestore.FileStore
+	Bh   *blobstore.BlobHandler
 }
 
 func NewController() (*Controller, error) {
 	db := sqlx.MustOpen("pgx", os.Getenv("API_DB_CREDS"))
+	var authLvl int
+	var err error
+	authLvlString := os.Getenv("AUTH_LEVEL")
+	if authLvlString == "" {
+		authLvl = 0
+		log.Warn("Fine Grained Access Control disabled")
+	} else {
+		authLvl, err = strconv.Atoi(authLvlString)
+		if err != nil {
+			log.Fatalf("could not convert AUTH_LEVEL env variable to integer: %v", err)
+		}
+	}
+	bh, err := blobstore.NewBlobHandler(".env.json", authLvl)
+	if err != nil {
+		errMsg := fmt.Errorf("failed to initialize a blobhandler %s", err.Error())
+		log.Fatal(errMsg)
+	}
+	s3Conf := NewS3Conf("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "AWS_S3_BUCKET")
+	s3fs := s3Conf.Init()
 
-	// s3Conf := NewS3Conf("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "AWS_S3_BUCKET")
-	// s3fs := s3Conf.Init()
-
-	// fs := FileStoreInit("S3")
-	crtl := &Controller{db}
+	fs := FileStoreInit("S3")
+	crtl := &Controller{DB: db, Bh: bh, S3FS: s3fs, FS: fs}
 	return crtl, crtl.DB.Ping()
 }
 
