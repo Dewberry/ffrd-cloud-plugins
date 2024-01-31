@@ -73,6 +73,7 @@ func main() {
 	// // filestore / mcat
 	e.GET("/mcat/break_line", mcats.GetGeoJSONHandler(ctrl))
 	e.GET("/mcat/mesh_line", mcats.GetGeoJSONHandler(ctrl))
+	e.GET("/mcat/twod_area", mcats.GetGeoJSONHandler(ctrl))
 	// e.PATCH("/mcat/refresh_mesh_line", mcats.GeoRefreshHandler(project, ctrl))
 	// e.PATCH("/mcat/refresh_break_line", mcats.GeoRefreshHandler(project, ctrl))
 	// e.PATCH("/mcat/refresh_twod_area", mcats.GeoRefreshHandler(project, ctrl))

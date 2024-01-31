@@ -149,6 +149,8 @@ func GetGeoJSONHandler(ctrl *controller.Controller) echo.HandlerFunc {
 			geoElement = "mesh"
 		case "/mcat/mesh_line":
 			geoElement = "breakline"
+		case "/mcat/twod_area":
+			geoElement = "twodarea"
 		default:
 			errMsg := "invalid endpoint"
 			log.Errorf(errMsg)
