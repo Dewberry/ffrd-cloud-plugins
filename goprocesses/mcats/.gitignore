@@ -1,0 +1,24 @@
+# env
+.env
+
+# postgres
+pg-data/
+
+# go
+main
+
+# vscode
+.vscode
+
+# traefik
+acme.json
+
+.data/
+.DS_Store
+._pg-data
+pg-data.tar.gz
+pg-data.zip
+.env.json
+env.json
+env
+.env.json

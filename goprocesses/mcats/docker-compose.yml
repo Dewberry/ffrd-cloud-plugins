@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: api
+    # init: true
+    build:
+      context: ./api
+      target: dev
+    networks:
+      - mcats
+    env_file:
+      - ./.env
+    volumes:
+      - ./api:/app
+      - ./.env.json:/app/.env.json
+    restart: unless-stopped
+    mem_limit: 4GB
+    mem_reservation: 1GB
+
+networks:
+  mcats:
+    driver: bridge
