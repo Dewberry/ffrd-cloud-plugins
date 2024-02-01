@@ -1,0 +1,10 @@
+{
+    "urlExpDay": 7,
+    "g01Key": "model-library/FFRD_Kanawha_Compute/ras/Bluestone Local/Kanawha_0505_Bluest.g01",
+    "projection": "wktUSACEProj",
+    "bucket": "ffrd-pilot",
+    "outPutPrefix": "logs/anton",
+    "geoElements": [
+        "all"
+    ]
+}
