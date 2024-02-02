@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Now you can use typedParams with the correct types
-	hrefs, err := mcats.GetGeoJsonPresigned(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
+	hrefs, err := mcats.GetGeoJsonPresignedUrls(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
 	if err != nil {
 		plug.Log.Panic(err)
 	}
