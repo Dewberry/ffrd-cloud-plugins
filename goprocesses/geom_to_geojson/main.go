@@ -41,7 +41,6 @@ func main() {
 	if err != nil {
 		plug.Log.Fatal(err)
 	}
-	fmt.Println(typedParams)
 	fs := utils.FileStoreInit(typedParams.Bucket)
 	s3Ctrl, err := utils.SessionManager()
 	if err != nil {
