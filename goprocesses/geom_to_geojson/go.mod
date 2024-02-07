@@ -5,7 +5,7 @@ go 1.21.3
 toolchain go1.21.6
 
 require (
-	github.com/Dewberry/mcat-ras v0.4.1-0.20230807215540-7cc4fa9597ed
+	github.com/Dewberry/mcat-ras v0.5.0
 	github.com/Dewberry/papigoplug v0.1.2
 	github.com/aws/aws-sdk-go v1.46.4
 	github.com/dewberry/gdal v0.3.4

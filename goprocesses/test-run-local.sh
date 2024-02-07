@@ -16,7 +16,7 @@ if [ -z "$IMAGE_EXISTS" ]; then
 else
     echo "Docker image already exists. Skipping build."
 fi
-
+docker build -f Dockerfile.geom_to_geojson -t $IMAGE_NAME .
 # Extract JSON from file
 JSON_STRING=$(jq -c . "$CONFIG_JSON_PATH")
 if [ $? -ne 0 ]; then

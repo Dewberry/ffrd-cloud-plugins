@@ -29,9 +29,9 @@ type Geometry struct {
 	Coordinates []interface{} `json:"coordinates"`
 }
 
-// GenerateAndUploadGeoJson will extract geometry from a g01 file transform it to a geojson and upload the geojson to S3.
+// ProcessGeometry will extract geometry from a g01 file transform it to a geojson and upload the geojson to S3.
 // this function will return the presigned URLS of the uploaded geojsons in S3
-func GenerateAndUploadGeoJson(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
+func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
 	var presignedUrlArr []string
 	//Check if key and projection are provided
 	plug.Log.Infof("validating user input")
@@ -105,15 +105,15 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 			field := v.Field(i)
 			fieldName := v.Type().Field(i).Name
 			if field.Kind() == reflect.Slice && field.Len() > 0 {
-				if fieldName == "Mesh" {
-					for _, feature := range features.Mesh {
-						var tempArr []tools.VectorFeature
-						tempArr = append(tempArr, feature)
-						specificFeatures[feature.FeatureName] = tempArr
-					}
-				} else {
-					specificFeatures[fieldName] = field.Interface()
-				}
+				// if fieldName == "Mesh" {
+				// 	for _, feature := range features.Mesh {
+				// 		var tempArr []tools.VectorFeature
+				// 		tempArr = append(tempArr, feature)
+				// 		specificFeatures[feature.FeatureName] = tempArr
+				// 	}
+				// } else {
+				specificFeatures[fieldName] = field.Interface()
+				// }
 
 			}
 		}
@@ -126,12 +126,12 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 		switch geoElement {
 		case "breakline":
 			specificFeatures[geoElement] = features.BreakLines
-		case "mesh":
-			for _, feature := range features.Mesh {
-				var tempArr []tools.VectorFeature
-				tempArr = append(tempArr, feature)
-				specificFeatures[feature.FeatureName] = tempArr
-			}
+		// case "mesh":
+		// 	for _, feature := range features.Mesh {
+		// 		var tempArr []tools.VectorFeature
+		// 		tempArr = append(tempArr, feature)
+		// 		specificFeatures[feature.FeatureName] = tempArr
+		// 	}
 		case "twodarea":
 			specificFeatures[geoElement] = features.TwoDAreas
 		default:
