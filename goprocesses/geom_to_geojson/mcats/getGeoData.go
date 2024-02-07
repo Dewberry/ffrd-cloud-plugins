@@ -2,99 +2,38 @@ package mcats
 
 import (
 	"app/utils"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/Dewberry/mcat-ras/tools"
 	"github.com/USACE/filestore"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/dewberry/gdal"
-	"github.com/labstack/echo/v4"
 )
-
-type RefLayer struct {
-	Type       string     `json:"type"`
-	Collection Collection `json:"collection"`
-}
 
 type Collection struct {
 	Type     string    `json:"type" default:"FeatureCollection"`
 	Features []Feature `json:"features,omitempty"`
 }
+
 type Feature struct {
 	Type       string                 `json:"type,omitempty"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 	Geometry   Geometry               `json:"geometry,omitempty"`
 }
+
 type Geometry struct {
 	Type        string        `json:"type"`
 	Coordinates []interface{} `json:"coordinates"`
-}
-type GeomRequest struct {
-	Key         string `json:"key" db:"s3_key"`
-	FeatureName string `json:"feature_name" db:"feature_name"`
-	Geom        string `json:"geom" db:"geom"`
-}
-
-func Handler(fs *filestore.FileStore, s3Ctrl utils.S3Controller) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		var geoElements []string
-		geoElements = append(geoElements, "all")
-		href, err := GetGeoJsonPresignedUrls(fs, s3Ctrl, 7, "antonTestingFolder/testing_files/Kanawha_0505_Bluest.g01", "WktUSACEProjFt37_5", "ffrd-trinity", "antonTestingFolder/testing_files/geoJson/mcats3", geoElements)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("error: %s", err.Error()))
-		}
-		return c.JSON(http.StatusOK, href)
-	}
 }
 
 func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
 	var presignedUrlArr []string
 	// Check if key and projection are provided
-	if g01Key == "" || projection == "" {
-		errMsg := fmt.Errorf("`key` and `projection` must be provided")
-		return presignedUrlArr, errMsg
-	}
-
-	if projection != "wktUSACEProj" && projection != "wktUSACEProjAlt" && projection != "WktUSACEProjFt37_5" {
-		errMsg := fmt.Errorf("`projection` can only be `wktUSACEProj` or `wktUSACEProjAlt` or `WktUSACEProjFt37_5`")
-		return presignedUrlArr, errMsg
-	}
-
-	//TODO: enforce what kind of types are allowed in teh array and enforce
-	// if geoElement != "mesh" && geoElement != "breakline" && geoElement != "twodarea" {
-	// 	errMsg := fmt.Errorf("`geoElement` can only be `mesh` or `breakline` or `twodarea`")
-	// 	return "", errMsg
-	// }
-
-	// Ensure the file has a .g01 extension
-	if err := ensureExtension(g01Key, ".g01"); err != nil {
-		errMsg := fmt.Errorf("invalid input file extension: %s", err.Error())
-		return presignedUrlArr, errMsg
-	}
-
-	// // Ensure the output file name had has a .geojson extension
-	// if err := ensureExtension(outputGeoJsonName, ".geojson"); err != nil {
-	// 	errMsg := fmt.Errorf("invalid output file extension: %s", err.Error())
-	// 	return "", errMsg
-	// }
-
-	// Check if the key exists in the S3 bucket
-	exists, err := utils.KeyExists(s3Ctrl.S3Svc, bucket, g01Key)
+	err := validateInputs(g01Key, projection, geoElement, bucket, s3Ctrl)
 	if err != nil {
-		errMsg := fmt.Errorf("error returned when invoking KeyExists: %s", err.Error())
-		return presignedUrlArr, errMsg
-	}
-
-	if !exists {
-		errMsg := fmt.Errorf("the provided object does not exist in the S3 bucket: %s", g01Key)
+		errMsg := fmt.Errorf("error while validating input parameter: %s", err.Error())
 		return presignedUrlArr, errMsg
 	}
 
@@ -121,49 +60,11 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 		}
 		collectionJson[key] = json
 	}
+
 	outPutPrefix = strings.TrimSuffix(outPutPrefix, "/")
-	for key, value := range collectionJson {
-		g01FileName := strings.TrimSuffix(filepath.Base(g01Key), filepath.Ext(filepath.Base(g01Key)))
-		outputKey := fmt.Sprintf("%s/%s_%s.geojson", outPutPrefix, g01FileName, key)
-		uploader := s3manager.NewUploader(s3Ctrl.Sess)
-		_, err = uploader.Upload(&s3manager.UploadInput{
-			Bucket:      aws.String(bucket),
-			Key:         aws.String(outputKey),
-			Body:        bytes.NewReader([]byte(value)),
-			ContentType: aws.String("binary/octet-stream"),
-		})
-		if err != nil {
-			errMsg := fmt.Errorf("error uploading %s to S3: %s", outputKey, err.Error())
-			return presignedUrlArr, errMsg
-		}
-		href, err := utils.GetDownloadPresignedURL(s3Ctrl.S3Svc, bucket, outputKey, urlExpDay)
-		if err != nil {
-			errMsg := fmt.Errorf("error generating presigned URL for %s: %s", outputKey, err)
-			return presignedUrlArr, errMsg
-		}
-		presignedUrlArr = append(presignedUrlArr, href)
-	}
+	presignedUrlArr, err = uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson, g01Key, outPutPrefix, bucket, urlExpDay, s3Ctrl)
 
 	return presignedUrlArr, err
-}
-
-// validateGeoElements checks if all elements in the input array are allowed.
-func validateGeoElements(elements []string) error {
-	for _, elem := range elements {
-		if _, exists := utils.AllowedGeoElements[elem]; !exists {
-			return fmt.Errorf("invalid geoElement '%s' provided; allowed elements are %v", elem, getKeysFromMap(utils.AllowedGeoElements))
-		}
-	}
-	return nil
-}
-
-// getKeysFromMap returns a slice of keys from the map
-func getKeysFromMap(m map[string]bool) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
 }
 
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
@@ -231,68 +132,4 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 	}
 
 	return specificFeatures, nil
-}
-
-// convertToGeoJSON converts a slice of VectorFeature objects into a GeoJSON feature collection.
-// The function takes a slice of VectorFeature objects as input and returns a GeoJSON Collection
-// or an error if the conversion fails.
-func convertToGeoJSON(features map[string]interface{}, projection string) (map[string]Collection, error) {
-	collections := make(map[string]Collection) // Initialize the map
-
-	for key, value := range features {
-		var geoJSONFeatures []Feature
-		if slice, ok := value.([]tools.VectorFeature); ok {
-			for _, feature := range slice {
-				// Assume that feature.Geometry is already in a format that can be included in a GeoJSON feature
-				geometry, err := ConvertWKBToGeoJSON(feature.Geometry, projection)
-				if err != nil {
-					return nil, fmt.Errorf("error converting geometry: %s", err.Error())
-				}
-
-				geoJSONFeature := Feature{
-					Type:       "Feature",
-					Properties: map[string]interface{}{"Name": feature.FeatureName},
-					Geometry:   geometry,
-				}
-				geoJSONFeatures = append(geoJSONFeatures, geoJSONFeature)
-			}
-		}
-		collections[key] = Collection{
-			Type:     "FeatureCollection",
-			Features: geoJSONFeatures,
-		}
-	}
-	return collections, nil
-}
-
-// ConvertWKBToGeoJSON converts Well-Known Binary (WKB) geometry data to GeoJSON format.
-// It takes a slice of uint8 representing the WKB data as input and returns a Geometry object
-// representing the corresponding GeoJSON data using the gdal functions.
-func ConvertWKBToGeoJSON(wkb []uint8, projection string) (Geometry, error) {
-	srs := gdal.CreateSpatialReference(projection)
-
-	//err := srs.FromEPSG(4326)
-	// if err != nil {
-	// 	return Geometry{}, fmt.Errorf("error initializing SRS based on EPSG code: %s", err.Error())
-	// }
-
-	geom, err := gdal.CreateFromWKB(wkb, srs, len(wkb))
-	if err != nil {
-		return Geometry{}, fmt.Errorf("error creating a geometry object from its WKB: %s", err.Error())
-	}
-
-	var geojson Geometry
-	err = json.Unmarshal([]byte(geom.ToJSON()), &geojson)
-	if err != nil {
-		return Geometry{}, fmt.Errorf("error unmarshalling geometry to JSON: %s", err.Error())
-	}
-	return geojson, nil
-}
-
-// ensureG01Extension checks if the given filePath has a .g01 extension.
-func ensureExtension(key string, ext string) error {
-	if filepath.Ext(key) != ext {
-		return fmt.Errorf("file must have a %s extension, got: %s", ext, filepath.Ext(key))
-	}
-	return nil
 }

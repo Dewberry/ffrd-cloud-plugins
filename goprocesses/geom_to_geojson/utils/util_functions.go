@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	plug "github.com/Dewberry/papigoplug/papigoplug"
@@ -80,4 +81,31 @@ func StrArrContains(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// validateGeoElements checks if all elements in the input array are allowed.
+func ValidateElements(elements []string, allowedElements map[string]bool) error {
+	for _, elem := range elements {
+		if _, exists := allowedElements[elem]; !exists {
+			return fmt.Errorf("invalid geoElement '%s' provided; allowed elements are %v", elem, getKeysFromMap(allowedElements))
+		}
+	}
+	return nil
+}
+
+// getKeysFromMap returns a slice of keys from the map
+func getKeysFromMap(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// ensureG01Extension checks if the given filePath has a .g01 extension.
+func EnsureExtension(key string, ext string) error {
+	if filepath.Ext(key) != ext {
+		return fmt.Errorf("file must have a %s extension, got: %s", ext, filepath.Ext(key))
+	}
+	return nil
 }
