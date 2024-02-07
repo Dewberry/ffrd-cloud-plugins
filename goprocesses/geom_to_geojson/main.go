@@ -47,8 +47,7 @@ func main() {
 		plug.Log.Fatal("Error connecting to s3: ", err.Error())
 	}
 
-	// Now you can use typedParams with the correct types
-	hrefs, err := mcats.GenerateAndUploadJson(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
+	hrefs, err := mcats.GenerateAndUploadGeoJson(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
 	if err != nil {
 		plug.Log.Fatal(err)
 	}

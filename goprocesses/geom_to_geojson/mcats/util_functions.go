@@ -48,7 +48,7 @@ func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte,
 	return presignedUrlArr, nil
 }
 
-// Function to validate input parameters and existence of g01 key in S3
+// validateInputs is used to validate input parameters and existence of g01 key in S3
 func validateInputs(g01Key string, projection string, geoElement []string, bucket string, s3Ctrl utils.S3Controller) error {
 
 	if g01Key == "" || projection == "" {

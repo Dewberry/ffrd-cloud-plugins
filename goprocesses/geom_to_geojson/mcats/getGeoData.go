@@ -29,7 +29,9 @@ type Geometry struct {
 	Coordinates []interface{} `json:"coordinates"`
 }
 
-func GenerateAndUploadJson(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
+// GenerateAndUploadGeoJson will extract geometry from a g01 file transform it to a geojson and upload the geojson to S3.
+// this function will return the presigned URLS of the uploaded geojsons in S3
+func GenerateAndUploadGeoJson(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
 	var presignedUrlArr []string
 	//Check if key and projection are provided
 	plug.Log.Infof("validating user input")
@@ -71,8 +73,8 @@ func GenerateAndUploadJson(fs *filestore.FileStore, s3Ctrl utils.S3Controller, u
 }
 
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
-// The function takes a controller object, the filePath of the geospatial data, and a string indicating the type of
-// geographic element (either "mesh" or "breakline").
+// The function takes a controller object, the filePath of the geospatial data, and an array of strings indicating the type of
+// geographic element.
 func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoElements []string) (map[string]interface{}, error) {
 	gd := tools.GeoData{
 		Features: make(map[string]tools.Features),

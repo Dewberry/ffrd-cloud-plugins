@@ -10,7 +10,7 @@ import (
 )
 
 // convertToGeoJSON converts a slice of VectorFeature objects into a GeoJSON feature collection.
-// The function takes a slice of VectorFeature objects as input and returns a GeoJSON Collection
+// The function takes a slice of VectorFeature objects as input along with it's projection and returns a GeoJSON Collection
 // or an error if the conversion fails.
 func convertToGeoJSON(features map[string]interface{}, projection string) (map[string]Collection, error) {
 	collections := make(map[string]Collection) // Initialize the map
@@ -42,7 +42,7 @@ func convertToGeoJSON(features map[string]interface{}, projection string) (map[s
 }
 
 // ConvertWKBToGeoJSON converts Well-Known Binary (WKB) geometry data to GeoJSON format.
-// It takes a slice of uint8 representing the WKB data as input and returns a Geometry object
+// It takes a slice of uint8 representing the WKB data as input along with it's projection and returns a Geometry object
 // representing the corresponding GeoJSON data using the gdal functions.
 func convertWKBToGeoJSON(wkb []uint8, projection string) (Geometry, error) {
 	if projection == "wktUSACEProj" {
