@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Dewberry/mcat-ras/tools"
+	plug "github.com/Dewberry/papigoplug/papigoplug"
 	"github.com/USACE/filestore"
 )
 
@@ -28,22 +29,24 @@ type Geometry struct {
 	Coordinates []interface{} `json:"coordinates"`
 }
 
-func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
+func GenerateAndUploadJson(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
 	var presignedUrlArr []string
-	// Check if key and projection are provided
+	//Check if key and projection are provided
+	plug.Log.Infof("validating user input")
 	err := validateInputs(g01Key, projection, geoElement, bucket, s3Ctrl)
 	if err != nil {
 		errMsg := fmt.Errorf("error while validating input parameter: %w", err)
 		return presignedUrlArr, errMsg
 	}
 
+	plug.Log.Infof("Retrieving and filtering geo data")
 	//Retrieve and filter Geospatial Data
 	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElement)
 	if err != nil {
 		errMsg := fmt.Errorf("error while getting the geo data: %w", err)
 		return presignedUrlArr, errMsg
 	}
-
+	plug.Log.Infof("converting geo data to geojson format")
 	//convert geospatial data to geojson format
 	collections, err := convertToGeoJSON(specificFeatures, projection)
 	if err != nil {
@@ -60,7 +63,7 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 		}
 		collectionJson[key] = json
 	}
-
+	plug.Log.Infof("uploading .geoJson file(s) to S3 bucket %s", bucket)
 	outPutPrefix = strings.TrimSuffix(outPutPrefix, "/")
 	presignedUrlArr, err = uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson, g01Key, outPutPrefix, bucket, urlExpDay, s3Ctrl)
 
@@ -70,7 +73,7 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
 // The function takes a controller object, the filePath of the geospatial data, and a string indicating the type of
 // geographic element (either "mesh" or "breakline").
-func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, geoElements []string) (map[string]interface{}, error) {
+func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoElements []string) (map[string]interface{}, error) {
 	gd := tools.GeoData{
 		Features: make(map[string]tools.Features),
 	}
@@ -81,17 +84,20 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 	} else if projection == "WktUSACEProjFt37_5" {
 		projection = utils.WktUSACEProjFt37_5
 	}
-	err := tools.GetGeospatialData(&gd, *fs, filePath, projection, 4326)
+
+	plug.Log.Infof("extracting geo spatial data from %s", g01Key)
+	err := tools.GetGeospatialData(&gd, *fs, g01Key, projection, 4326)
 	if err != nil {
-		return nil, fmt.Errorf("error in GetGeospatialData for %s: %w", filePath, err)
+		return nil, fmt.Errorf("error in GetGeospatialData for %s: %w", g01Key, err)
 	}
 
 	// Filter features
 	specificFeatures := make(map[string]interface{})
 
-	features := gd.Features[path.Base(filePath)]
+	features := gd.Features[path.Base(g01Key)]
 
 	if utils.StrArrContains(geoElements, "all") {
+		plug.Log.Infof("appending all data from g01 file and not filtering")
 		v := reflect.ValueOf(features)
 		for i := 0; i < v.NumField(); i++ {
 			field := v.Field(i)
@@ -114,6 +120,7 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 	// Extract the right features based on geoElement
 
 	for _, geoElement := range geoElements {
+		plug.Log.Infof("filtering and appending %s element", geoElement)
 		switch geoElement {
 		case "breakline":
 			specificFeatures[geoElement] = features.BreakLines
