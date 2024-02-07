@@ -1,6 +1,7 @@
 package mcats
 
 import (
+	"app/utils"
 	"encoding/json"
 	"fmt"
 
@@ -44,6 +45,14 @@ func convertToGeoJSON(features map[string]interface{}, projection string) (map[s
 // It takes a slice of uint8 representing the WKB data as input and returns a Geometry object
 // representing the corresponding GeoJSON data using the gdal functions.
 func convertWKBToGeoJSON(wkb []uint8, projection string) (Geometry, error) {
+	if projection == "wktUSACEProj" {
+		projection = utils.WktUSACEProj
+	} else if projection == "wktUSACEProjAlt" {
+		projection = utils.WktUSACEProjAlt
+	} else if projection == "WktUSACEProjFt37_5" {
+		projection = utils.WktUSACEProjFt37_5
+	}
+
 	srs := gdal.CreateSpatialReference(projection)
 
 	geom, err := gdal.CreateFromWKB(wkb, srs, len(wkb))
