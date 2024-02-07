@@ -66,7 +66,7 @@ func SessionManager() (S3Controller, error) {
 		Credentials: credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""),
 	})
 	if err != nil {
-		return s3Ctrl, fmt.Errorf("error creating s3 session: %s", err.Error())
+		return s3Ctrl, fmt.Errorf("error creating s3 session: %w", err)
 	}
 	s3Ctrl.Sess = sess
 	s3Ctrl.S3Svc = s3.New(sess)
@@ -84,10 +84,10 @@ func KeyExists(s3Ctrl *s3.S3, bucket string, key string) (bool, error) {
 			case "NotFound": // s3.ErrCodeNoSuchKey does not work, aws is missing this error code so we hardwire a string
 				return false, nil
 			default:
-				return false, fmt.Errorf("KeyExists: %s", err)
+				return false, fmt.Errorf("KeyExists: %w", err)
 			}
 		}
-		return false, fmt.Errorf("KeyExists: %s", err)
+		return false, fmt.Errorf("KeyExists: %w", err)
 	}
 	return true, nil
 }

@@ -21,7 +21,7 @@ func convertToGeoJSON(features map[string]interface{}, projection string) (map[s
 				// Assume that feature.Geometry is already in a format that can be included in a GeoJSON feature
 				geometry, err := convertWKBToGeoJSON(feature.Geometry, projection)
 				if err != nil {
-					return nil, fmt.Errorf("error converting geometry: %s", err.Error())
+					return nil, fmt.Errorf("error converting geometry: %w", err)
 				}
 
 				geoJSONFeature := Feature{
@@ -46,20 +46,15 @@ func convertToGeoJSON(features map[string]interface{}, projection string) (map[s
 func convertWKBToGeoJSON(wkb []uint8, projection string) (Geometry, error) {
 	srs := gdal.CreateSpatialReference(projection)
 
-	//err := srs.FromEPSG(4326)
-	// if err != nil {
-	// 	return Geometry{}, fmt.Errorf("error initializing SRS based on EPSG code: %s", err.Error())
-	// }
-
 	geom, err := gdal.CreateFromWKB(wkb, srs, len(wkb))
 	if err != nil {
-		return Geometry{}, fmt.Errorf("error creating a geometry object from its WKB: %s", err.Error())
+		return Geometry{}, fmt.Errorf("error creating a geometry object from its WKB:  %w", err)
 	}
 
 	var geojson Geometry
 	err = json.Unmarshal([]byte(geom.ToJSON()), &geojson)
 	if err != nil {
-		return Geometry{}, fmt.Errorf("error unmarshalling geometry to JSON: %s", err.Error())
+		return Geometry{}, fmt.Errorf("error unmarshalling geometry to JSON:  %w", err)
 	}
 	return geojson, nil
 }

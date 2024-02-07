@@ -32,13 +32,13 @@ func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte,
 			ContentType: aws.String("binary/octet-stream"),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error uploading %s to S3: %s", outputKey, err)
+			return nil, fmt.Errorf("error uploading %s to S3: %w", outputKey, err)
 		}
 
 		// Generate a presigned URL for the uploaded file.
 		href, err := utils.GetDownloadPresignedURL(s3Ctrl.S3Svc, bucket, outputKey, urlExpDay)
 		if err != nil {
-			return nil, fmt.Errorf("error generating presigned URL for %s: %s", outputKey, err)
+			return nil, fmt.Errorf("error generating presigned URL for %s: %w", outputKey, err)
 		}
 
 		// Append the presigned URL to the result slice.
@@ -61,16 +61,16 @@ func validateInputs(g01Key string, projection string, geoElement []string, bucke
 
 	err := utils.ValidateElements(geoElement, utils.AllowedGeoElements)
 	if err != nil {
-		return fmt.Errorf("error returned while validating geoElements: %s", err.Error())
+		return fmt.Errorf("error returned while validating geoElements: %w", err)
 	}
 
 	if err := utils.EnsureExtension(g01Key, ".g01"); err != nil {
-		return fmt.Errorf("invalid input file extension: %s", err.Error())
+		return fmt.Errorf("invalid input file extension: %w", err)
 	}
 
 	exists, err := utils.KeyExists(s3Ctrl.S3Svc, bucket, g01Key)
 	if err != nil {
-		return fmt.Errorf("error returned when invoking KeyExists: %s", err.Error())
+		return fmt.Errorf("error returned when invoking KeyExists: %w", err)
 	}
 	if !exists {
 		return fmt.Errorf("the provided object does not exist in the S3 bucket: %s", g01Key)

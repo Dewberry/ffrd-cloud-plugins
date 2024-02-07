@@ -33,21 +33,21 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 	// Check if key and projection are provided
 	err := validateInputs(g01Key, projection, geoElement, bucket, s3Ctrl)
 	if err != nil {
-		errMsg := fmt.Errorf("error while validating input parameter: %s", err.Error())
+		errMsg := fmt.Errorf("error while validating input parameter: %w", err)
 		return presignedUrlArr, errMsg
 	}
 
 	//Retrieve and filter Geospatial Data
 	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElement)
 	if err != nil {
-		errMsg := fmt.Errorf("error while getting the geo data: %s", err)
+		errMsg := fmt.Errorf("error while getting the geo data: %w", err)
 		return presignedUrlArr, errMsg
 	}
 
 	//convert geospatial data to geojson format
 	collections, err := convertToGeoJSON(specificFeatures, projection)
 	if err != nil {
-		errMsg := fmt.Errorf("error while converting the geo data to GeoJSON: %s", err)
+		errMsg := fmt.Errorf("error while converting the geo data to GeoJSON: %w", err)
 		return presignedUrlArr, errMsg
 	}
 	collectionJson := make(map[string][]byte)
@@ -55,7 +55,7 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 	for key, value := range collections {
 		json, err := json.Marshal(value)
 		if err != nil {
-			errMsg := fmt.Errorf("error while marshalling geojson struct to json: %s", err)
+			errMsg := fmt.Errorf("error while marshalling geojson struct to json: %w", err)
 			return presignedUrlArr, errMsg
 		}
 		collectionJson[key] = json
@@ -83,7 +83,7 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 	}
 	err := tools.GetGeospatialData(&gd, *fs, filePath, projection, 4326)
 	if err != nil {
-		return nil, fmt.Errorf("error in GetGeospatialData for %s: %s", filePath, err.Error())
+		return nil, fmt.Errorf("error in GetGeospatialData for %s: %w", filePath, err)
 	}
 
 	// Filter features
