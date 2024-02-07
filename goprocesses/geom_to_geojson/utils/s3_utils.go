@@ -34,28 +34,19 @@ func (s S3Config) Init() *filestore.S3FS {
 	return fs.(*filestore.S3FS)
 }
 
-func FileStoreInit(store string) *filestore.FileStore {
-
+func FileStoreInit(bucket string) *filestore.FileStore {
 	var fs filestore.FileStore
 	var err error
-	switch store {
-	case "LOCAL":
-		fs, err = filestore.NewFileStore(filestore.BlockFSConfig{})
-		if err != nil {
-			panic(err)
-		}
-	case "S3":
-		config := filestore.S3FSConfig{
-			S3Id:     os.Getenv("AWS_ACCESS_KEY_ID"),
-			S3Key:    os.Getenv("AWS_SECRET_ACCESS_KEY"),
-			S3Region: os.Getenv("AWS_REGION"),
-			S3Bucket: os.Getenv("AWS_S3_BUCKET"),
-		}
+	config := filestore.S3FSConfig{
+		S3Id:     os.Getenv("AWS_ACCESS_KEY_ID"),
+		S3Key:    os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		S3Region: os.Getenv("AWS_REGION"),
+		S3Bucket: bucket,
+	}
 
-		fs, err = filestore.NewFileStore(config)
-		if err != nil {
-			panic(err)
-		}
+	fs, err = filestore.NewFileStore(config)
+	if err != nil {
+		panic(err)
 	}
 	return &fs
 }
