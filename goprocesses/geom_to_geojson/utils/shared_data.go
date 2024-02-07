@@ -74,3 +74,10 @@ const WktUSACEProjFt37_5 string = `PROJCS["USA_Contiguous_Albers_Equal_Area_Coni
 								PARAMETER["Standard_Parallel_2",45.5],
 								PARAMETER["Latitude_Of_Origin",37.5],
 								UNIT["Foot_US",0.3048006096012192]]`
+
+var AllowedGeoElements = map[string]bool{
+	"mesh":      true,
+	"breakline": true,
+	"twodarea":  true,
+	"all":       true,
+}

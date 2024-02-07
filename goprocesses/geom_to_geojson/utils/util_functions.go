@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	plug "github.com/Dewberry/papigoplug/papigoplug"
 )
 
 type ParamTypes struct {
@@ -19,13 +21,14 @@ func AssertParams(params map[string]interface{}) (ParamTypes, error) {
 	var typedParams ParamTypes
 	var errStrings []string
 
-	if urlExpDay, ok := params["urlExpDay"].(int); ok {
-		typedParams.UrlExpDay = urlExpDay
+	if urlExpDayFloat, ok := params["urlExpDay"].(float64); ok {
+		typedParams.UrlExpDay = int(urlExpDayFloat)
+		plug.Log.Infof("urlExpDay cast from float: %v to int: %v", urlExpDayFloat, typedParams.UrlExpDay)
 	} else {
-		errStrings = append(errStrings, "urlExpDay must be an integer")
+		errStrings = append(errStrings, "urlExpDay must be a number")
 	}
 
-	if g01key, ok := params["g01key"].(string); ok {
+	if g01key, ok := params["g01Key"].(string); ok {
 		typedParams.G01key = g01key
 	} else {
 		errStrings = append(errStrings, "g01key must be a string")
@@ -33,6 +36,7 @@ func AssertParams(params map[string]interface{}) (ParamTypes, error) {
 
 	if projection, ok := params["projection"].(string); ok {
 		typedParams.Projection = projection
+
 	} else {
 		errStrings = append(errStrings, "projection must be a string")
 	}
@@ -49,10 +53,16 @@ func AssertParams(params map[string]interface{}) (ParamTypes, error) {
 		errStrings = append(errStrings, "outputPrefix must be a string")
 	}
 
-	if geoElements, ok := params["geoElements"].([]string); ok {
-		typedParams.GeoElements = geoElements
+	if ge, ok := params["geoElements"].([]interface{}); ok {
+		for _, elem := range ge {
+			if str, ok := elem.(string); ok {
+				typedParams.GeoElements = append(typedParams.GeoElements, str)
+			} else {
+				errStrings = append(errStrings, "each element in geoElements must be a string")
+			}
+		}
 	} else {
-		errStrings = append(errStrings, "geoElements must be a slice of strings")
+		errStrings = append(errStrings, "geoElements must be an array of strings")
 	}
 
 	if len(errStrings) > 0 {

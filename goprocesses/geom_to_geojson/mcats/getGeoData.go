@@ -47,7 +47,7 @@ func Handler(fs *filestore.FileStore, s3Ctrl utils.S3Controller) echo.HandlerFun
 	return func(c echo.Context) error {
 		var geoElements []string
 		geoElements = append(geoElements, "all")
-		href, err := GetGeoJsonPresignedUrls(fs, s3Ctrl, 7, "model-library/FFRD_Kanawha_Compute/ras/Bluestone Local/Kanawha_0505_Bluest.g01", "wktUSACEProj", "ffrd-pilot", "logs/anton", geoElements)
+		href, err := GetGeoJsonPresignedUrls(fs, s3Ctrl, 7, "antonTestingFolder/testing_files/Kanawha_0505_Bluest.g01", "WktUSACEProjFt37_5", "ffrd-trinity", "antonTestingFolder/testing_files/geoJson/mcats3", geoElements)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, fmt.Sprintf("error: %s", err.Error()))
 		}
@@ -98,7 +98,7 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 		return presignedUrlArr, errMsg
 	}
 
-	// Retrieve and filter Geospatial Data
+	//Retrieve and filter Geospatial Data
 	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElement)
 	if err != nil {
 		errMsg := fmt.Errorf("error while getting the geo data: %s", err)
@@ -106,7 +106,7 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 	}
 
 	//convert geospatial data to geojson format
-	collections, err := convertToGeoJSON(specificFeatures)
+	collections, err := convertToGeoJSON(specificFeatures, projection)
 	if err != nil {
 		errMsg := fmt.Errorf("error while converting the geo data to GeoJSON: %s", err)
 		return presignedUrlArr, errMsg
@@ -147,6 +147,25 @@ func GetGeoJsonPresignedUrls(fs *filestore.FileStore, s3Ctrl utils.S3Controller,
 	return presignedUrlArr, err
 }
 
+// validateGeoElements checks if all elements in the input array are allowed.
+func validateGeoElements(elements []string) error {
+	for _, elem := range elements {
+		if _, exists := utils.AllowedGeoElements[elem]; !exists {
+			return fmt.Errorf("invalid geoElement '%s' provided; allowed elements are %v", elem, getKeysFromMap(utils.AllowedGeoElements))
+		}
+	}
+	return nil
+}
+
+// getKeysFromMap returns a slice of keys from the map
+func getKeysFromMap(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
 // The function takes a controller object, the filePath of the geospatial data, and a string indicating the type of
 // geographic element (either "mesh" or "breakline").
@@ -177,7 +196,16 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 			field := v.Field(i)
 			fieldName := v.Type().Field(i).Name
 			if field.Kind() == reflect.Slice && field.Len() > 0 {
-				specificFeatures[fieldName] = field.Interface()
+				if fieldName == "Mesh" {
+					for _, feature := range features.Mesh {
+						var tempArr []tools.VectorFeature
+						tempArr = append(tempArr, feature)
+						specificFeatures[feature.FeatureName] = tempArr
+					}
+				} else {
+					specificFeatures[fieldName] = field.Interface()
+				}
+
 			}
 		}
 		return specificFeatures, nil
@@ -208,7 +236,7 @@ func getFilteredGeoData(fs *filestore.FileStore, filePath, projection string, ge
 // convertToGeoJSON converts a slice of VectorFeature objects into a GeoJSON feature collection.
 // The function takes a slice of VectorFeature objects as input and returns a GeoJSON Collection
 // or an error if the conversion fails.
-func convertToGeoJSON(features map[string]interface{}) (map[string]Collection, error) {
+func convertToGeoJSON(features map[string]interface{}, projection string) (map[string]Collection, error) {
 	collections := make(map[string]Collection) // Initialize the map
 
 	for key, value := range features {
@@ -216,7 +244,7 @@ func convertToGeoJSON(features map[string]interface{}) (map[string]Collection, e
 		if slice, ok := value.([]tools.VectorFeature); ok {
 			for _, feature := range slice {
 				// Assume that feature.Geometry is already in a format that can be included in a GeoJSON feature
-				geometry, err := ConvertWKBToGeoJSON(feature.Geometry)
+				geometry, err := ConvertWKBToGeoJSON(feature.Geometry, projection)
 				if err != nil {
 					return nil, fmt.Errorf("error converting geometry: %s", err.Error())
 				}
@@ -240,13 +268,13 @@ func convertToGeoJSON(features map[string]interface{}) (map[string]Collection, e
 // ConvertWKBToGeoJSON converts Well-Known Binary (WKB) geometry data to GeoJSON format.
 // It takes a slice of uint8 representing the WKB data as input and returns a Geometry object
 // representing the corresponding GeoJSON data using the gdal functions.
-func ConvertWKBToGeoJSON(wkb []uint8) (Geometry, error) {
-	srs := gdal.CreateSpatialReference(utils.WktUSACEProj)
+func ConvertWKBToGeoJSON(wkb []uint8, projection string) (Geometry, error) {
+	srs := gdal.CreateSpatialReference(projection)
 
-	err := srs.FromEPSG(4326)
-	if err != nil {
-		return Geometry{}, fmt.Errorf("error initializing SRS based on EPSG code: %s", err.Error())
-	}
+	//err := srs.FromEPSG(4326)
+	// if err != nil {
+	// 	return Geometry{}, fmt.Errorf("error initializing SRS based on EPSG code: %s", err.Error())
+	// }
 
 	geom, err := gdal.CreateFromWKB(wkb, srs, len(wkb))
 	if err != nil {

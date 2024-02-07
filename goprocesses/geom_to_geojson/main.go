@@ -8,9 +8,11 @@ import (
 	"app/utils"
 
 	plug "github.com/Dewberry/papigoplug/papigoplug"
+	"github.com/joho/godotenv"
 )
 
 func init() {
+	godotenv.Load("../.env")
 	requiredEnvVars := []string{
 		"AWS_ACCESS_KEY_ID",
 		"AWS_SECRET_ACCESS_KEY",
@@ -26,31 +28,30 @@ func init() {
 }
 
 func main() {
-	//s3Conf := utils.NewS3Conf("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "AWS_S3_BUCKET")
-	//s3fs := s3Conf.Init()
 	plug.InitLog("info")
 	allowedParams := plug.PluginParams{
-		Required: []string{"urlExpDay", "g01key", "projection", "bucket", "outputPrefix", "geoElements"},
-	}
-	fs := utils.FileStoreInit("S3")
-	s3Ctrl, err := utils.SessionManager()
-	if err != nil {
-		plug.Log.Panic("Error connecting to s3: ", err.Error())
+		Required: []string{"urlExpDay", "g01Key", "projection", "bucket", "outputPrefix", "geoElements"},
 	}
 	params, err := plug.ParseInput(os.Args, allowedParams)
 	if err != nil {
-		plug.Log.Panic(err)
+		plug.Log.Fatal(err)
 	}
-	plug.Log.Infof("Params provided: %s", params) // params[""]
+	plug.Log.Infof("Params provided: %s", params)
 	typedParams, err := utils.AssertParams(params)
 	if err != nil {
-		plug.Log.Panic(err)
+		plug.Log.Fatal(err)
+	}
+	fmt.Println(typedParams)
+	fs := utils.FileStoreInit("S3")
+	s3Ctrl, err := utils.SessionManager()
+	if err != nil {
+		plug.Log.Fatal("Error connecting to s3: ", err.Error())
 	}
 
 	// Now you can use typedParams with the correct types
 	hrefs, err := mcats.GetGeoJsonPresignedUrls(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
 	if err != nil {
-		plug.Log.Panic(err)
+		plug.Log.Fatal(err)
 	}
 	hrefsMap := make(map[string]interface{})
 	hrefsMap["results"] = hrefs
