@@ -47,12 +47,10 @@ func main() {
 		plug.Log.Fatal("Error connecting to s3: ", err.Error())
 	}
 
-	hrefs, err := mcats.ProcessGeometry(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
+	results, err := mcats.ProcessGeometry(fs, s3Ctrl, typedParams.UrlExpDay, typedParams.G01key, typedParams.Projection, typedParams.Bucket, typedParams.OutputPrefix, typedParams.GeoElements)
 	if err != nil {
 		plug.Log.Fatal(err)
 	}
-	hrefsMap := make(map[string]interface{})
-	hrefsMap["results"] = hrefs
-	defer plug.PrintResults(hrefsMap)
 
+	plug.PrintResults(results)
 }

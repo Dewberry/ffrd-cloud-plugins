@@ -11,41 +11,66 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+type FinalOutput struct {
+	Links   []Link   `json:"links"`
+	Results []Result `json:"results"`
+}
+
+type Link struct {
+	Href  string `json:"Href"`
+	Rel   string `json:"rel"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+}
+
+type Result struct {
+	Href  string `json:"href"`
+	Title string `json:"title"`
+}
+
+type UploadResult struct {
+	PresignedURL string
+	S3URI        string
+	Title        string
+}
+
 // UploadGeoJSONToS3AndGeneratePresignedURLs uploads GeoJSON data to S3 and generates presigned URLs.
 // It returns a slice of presigned URLs and any error encountered.
-func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte, g01Key, outPutPrefix, bucket string, urlExpDay int, s3Ctrl utils.S3Controller) ([]string, error) {
-	var presignedUrlArr []string
+func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte, g01Key, outPutPrefix, bucket string, urlExpDay int, s3Ctrl utils.S3Controller) ([]UploadResult, error) {
+	var results []UploadResult
 
 	for key, value := range collectionJson {
-		// Generate the output file name based on the key and the original file name.
 		g01FileName := strings.TrimSuffix(filepath.Base(g01Key), filepath.Ext(filepath.Base(g01Key)))
 		outputKey := fmt.Sprintf("%s/%s_%s.geojson", outPutPrefix, g01FileName, key)
-
-		// Create a new uploader using the S3 session.
 		uploader := s3manager.NewUploader(s3Ctrl.Sess)
 
-		// Upload the JSON value to S3.
 		_, err := uploader.Upload(&s3manager.UploadInput{
 			Bucket:      aws.String(bucket),
 			Key:         aws.String(outputKey),
 			Body:        bytes.NewReader(value),
-			ContentType: aws.String("binary/octet-stream"),
+			ContentType: aws.String("application/geo+json"),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error uploading %s to S3: %w", outputKey, err)
+			return nil, fmt.Errorf("error uploading %s to S3: %s", outputKey, err)
 		}
 
-		// Generate a presigned URL for the uploaded file.
 		href, err := utils.GetDownloadPresignedURL(s3Ctrl.S3Svc, bucket, outputKey, urlExpDay)
 		if err != nil {
-			return nil, fmt.Errorf("error generating presigned URL for %s: %w", outputKey, err)
+			return nil, fmt.Errorf("error generating presigned URL for %s: %s", outputKey, err)
 		}
 
-		// Append the presigned URL to the result slice.
-		presignedUrlArr = append(presignedUrlArr, href)
+		s3URI := "s3://" + bucket + "/" + outputKey
+		title := g01FileName + " " + key
+
+		result := UploadResult{
+			PresignedURL: href,
+			S3URI:        s3URI,
+			Title:        title,
+		}
+		results = append(results, result)
 	}
 
-	return presignedUrlArr, nil
+	return results, nil
 }
 
 // validateInputs is used to validate input parameters and existence of g01 key in S3

@@ -31,14 +31,14 @@ type Geometry struct {
 
 // ProcessGeometry will extract geometry from a g01 file transform it to a geojson and upload the geojson to S3.
 // this function will return the presigned URLS of the uploaded geojsons in S3
-func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) ([]string, error) {
-	var presignedUrlArr []string
+func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) (map[string]interface{}, error) {
+	finalOutput := make(map[string]interface{})
 	//Check if key and projection are provided
 	plug.Log.Infof("validating user input")
 	err := validateInputs(g01Key, projection, geoElement, bucket, s3Ctrl)
 	if err != nil {
 		errMsg := fmt.Errorf("error while validating input parameter: %w", err)
-		return presignedUrlArr, errMsg
+		return finalOutput, errMsg
 	}
 
 	plug.Log.Infof("Retrieving and filtering geo data")
@@ -46,14 +46,14 @@ func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpD
 	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElement)
 	if err != nil {
 		errMsg := fmt.Errorf("error while getting the geo data: %w", err)
-		return presignedUrlArr, errMsg
+		return finalOutput, errMsg
 	}
 	plug.Log.Infof("converting geo data to geojson format")
 	//convert geospatial data to geojson format
 	collections, err := convertToGeoJSON(specificFeatures, projection)
 	if err != nil {
 		errMsg := fmt.Errorf("error while converting the geo data to GeoJSON: %w", err)
-		return presignedUrlArr, errMsg
+		return finalOutput, errMsg
 	}
 	collectionJson := make(map[string][]byte)
 	//convert geojson struct to json
@@ -61,15 +61,40 @@ func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpD
 		json, err := json.Marshal(value)
 		if err != nil {
 			errMsg := fmt.Errorf("error while marshalling geojson struct to json: %w", err)
-			return presignedUrlArr, errMsg
+			return finalOutput, errMsg
 		}
 		collectionJson[key] = json
 	}
 	plug.Log.Infof("uploading .geoJson file(s) to S3 bucket %s", bucket)
 	outPutPrefix = strings.TrimSuffix(outPutPrefix, "/")
-	presignedUrlArr, err = uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson, g01Key, outPutPrefix, bucket, urlExpDay, s3Ctrl)
+	uploadResults, err := uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson, g01Key, outPutPrefix, bucket, urlExpDay, s3Ctrl)
+	if err != nil {
+		return nil, err
+	}
 
-	return presignedUrlArr, err
+	links := make([]interface{}, 0)
+	results := make([]interface{}, 0)
+
+	for _, result := range uploadResults {
+		links = append(links, map[string]interface{}{
+			"Href":  result.PresignedURL,
+			"rel":   "presigned-url",
+			"title": result.S3URI,
+			"type":  "application/octet-stream",
+		})
+
+		results = append(results, map[string]interface{}{
+			"href":  result.S3URI,
+			"title": result.Title,
+		})
+	}
+
+	finalOutput = map[string]interface{}{
+		"links":   links,
+		"results": results,
+	}
+
+	return finalOutput, nil
 }
 
 // getFilteredGeoData retrieves geospatial data for a given filePath and filters it based on the geoElement provided.
