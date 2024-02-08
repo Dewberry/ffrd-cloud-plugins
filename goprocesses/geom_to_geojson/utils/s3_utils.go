@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -11,10 +12,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type S3Config struct {
 	config filestore.S3FSConfig
+}
+
+type S3Controller struct {
+	Sess  *session.Session
+	S3Svc *s3.S3
 }
 
 func NewS3Conf(accessKeyENV, secretAccessKeyENV, regionENV, bucketENV string) *S3Config {
@@ -51,11 +58,6 @@ func FileStoreInit(bucket string) *filestore.FileStore {
 	return &fs
 }
 
-type S3Controller struct {
-	Sess  *session.Session
-	S3Svc *s3.S3
-}
-
 func SessionManager() (S3Controller, error) {
 	region := os.Getenv("AWS_REGION")
 	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
@@ -84,10 +86,10 @@ func KeyExists(s3Ctrl *s3.S3, bucket string, key string) (bool, error) {
 			case "NotFound": // s3.ErrCodeNoSuchKey does not work, aws is missing this error code so we hardwire a string
 				return false, nil
 			default:
-				return false, fmt.Errorf("KeyExists: %w", err)
+				return false, err
 			}
 		}
-		return false, fmt.Errorf("KeyExists: %w", err)
+		return false, err
 	}
 	return true, nil
 }
@@ -99,4 +101,25 @@ func GetDownloadPresignedURL(s3Ctrl *s3.S3, bucket, key string, expDays int) (st
 		Key:    aws.String(key),
 	})
 	return req.Presign(duration)
+}
+
+func UploadToS3(sess *session.Session, bucket, key string, content []byte, contentType string) (string, error) {
+	// Create an uploader instance with the session
+	uploader := s3manager.NewUploader(sess)
+
+	// Perform the upload
+	_, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(content),
+		ContentType: aws.String(contentType),
+	})
+	if err != nil {
+		return "", fmt.Errorf("error uploading to S3: %w", err)
+	}
+
+	// Construct the S3 URI
+	s3URI := "s3://" + bucket + "/" + key
+
+	return s3URI, nil
 }

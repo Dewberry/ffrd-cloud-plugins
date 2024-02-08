@@ -2,13 +2,9 @@ package mcats
 
 import (
 	"app/utils"
-	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type FinalOutput struct {
@@ -42,32 +38,26 @@ func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte,
 	for key, value := range collectionJson {
 		g01FileName := strings.TrimSuffix(filepath.Base(g01Key), filepath.Ext(filepath.Base(g01Key)))
 		outputKey := fmt.Sprintf("%s/%s_%s.geojson", outPutPrefix, g01FileName, key)
-		uploader := s3manager.NewUploader(s3Ctrl.Sess)
 
-		_, err := uploader.Upload(&s3manager.UploadInput{
-			Bucket:      aws.String(bucket),
-			Key:         aws.String(outputKey),
-			Body:        bytes.NewReader(value),
-			ContentType: aws.String("application/geo+json"),
-		})
+		// Use the UploadToS3 function for uploading
+		s3URI, err := utils.UploadToS3(s3Ctrl.Sess, bucket, outputKey, value, "application/octet-stream")
 		if err != nil {
-			return nil, fmt.Errorf("error uploading %s to S3: %s", outputKey, err)
+			return nil, fmt.Errorf("error uploading %s to S3: %w", outputKey, err)
 		}
 
+		// Generate the presigned URL for the uploaded file
 		href, err := utils.GetDownloadPresignedURL(s3Ctrl.S3Svc, bucket, outputKey, urlExpDay)
 		if err != nil {
-			return nil, fmt.Errorf("error generating presigned URL for %s: %s", outputKey, err)
+			return nil, fmt.Errorf("error generating presigned URL for %s: %w", outputKey, err)
 		}
 
-		s3URI := "s3://" + bucket + "/" + outputKey
 		title := g01FileName + " " + key
 
-		result := UploadResult{
+		results = append(results, UploadResult{
 			PresignedURL: href,
 			S3URI:        s3URI,
 			Title:        title,
-		}
-		results = append(results, result)
+		})
 	}
 
 	return results, nil
