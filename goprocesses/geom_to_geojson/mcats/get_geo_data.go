@@ -149,7 +149,7 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 	for _, geoElement := range geoElements {
 		plug.Log.Infof("filtering and appending %s element", geoElement)
 		switch geoElement {
-		case "breakline":
+		case "breaklines":
 			specificFeatures[geoElement] = features.BreakLines
 		case "mesh":
 			for _, feature := range features.Mesh {
@@ -157,8 +157,12 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 				tempArr = append(tempArr, feature)
 				specificFeatures[feature.FeatureName] = tempArr
 			}
-		case "twodarea":
+		case "twodareas":
 			specificFeatures[geoElement] = features.TwoDAreas
+		case "bclines":
+			specificFeatures[geoElement] = features.BCLines
+		case "connections":
+			specificFeatures[geoElement] = features.Connections
 		default:
 			return nil, fmt.Errorf("Invalid geoElement provided: %s", geoElement)
 		}
