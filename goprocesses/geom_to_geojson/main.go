@@ -41,7 +41,10 @@ func main() {
 	if err != nil {
 		plug.Log.Fatal(err)
 	}
-	fs := utils.FileStoreInit(typedParams.Bucket)
+	fs, err := utils.FileStoreInit(typedParams.Bucket)
+	if err != nil {
+		plug.Log.Fatal("Error Initiating FileStore: ", err.Error())
+	}
 	s3Ctrl, err := utils.SessionManager()
 	if err != nil {
 		plug.Log.Fatal("Error connecting to s3: ", err.Error())

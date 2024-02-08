@@ -22,7 +22,7 @@ type S3Controller struct {
 
 // FileStoreInit initializes a new filestore using environment variables for AWS credentials and the specified bucket.
 // It returns a pointer to the initialized filestore or panics if there is an error during filestore creation.
-func FileStoreInit(bucket string) *filestore.FileStore {
+func FileStoreInit(bucket string) (*filestore.FileStore, error) {
 	var fs filestore.FileStore
 	var err error
 	config := filestore.S3FSConfig{
@@ -34,9 +34,9 @@ func FileStoreInit(bucket string) *filestore.FileStore {
 
 	fs, err = filestore.NewFileStore(config)
 	if err != nil {
-		panic(err)
+		return &fs, err
 	}
-	return &fs
+	return &fs, err
 }
 
 // SessionManager creates and returns a new S3Controller with a session and S3 service client configured for the AWS credentials and region specified in environment variables.

@@ -91,6 +91,5 @@ func validateInputs(g01Key string, projection string, geoElement []string, bucke
 		return fmt.Errorf("the provided object does not exist in the S3 bucket: %s", g01Key)
 	}
 
-	// If everything is valid, return an empty presignedUrlArr and nil error
 	return nil
 }
