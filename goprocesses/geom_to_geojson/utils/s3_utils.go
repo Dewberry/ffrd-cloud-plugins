@@ -24,23 +24,8 @@ type S3Controller struct {
 	S3Svc *s3.S3
 }
 
-func NewS3Conf(accessKeyENV, secretAccessKeyENV, regionENV, bucketENV string) *S3Config {
-	s3Conf := filestore.S3FSConfig{}
-	s3Conf.S3Id = os.Getenv(accessKeyENV)
-	s3Conf.S3Key = os.Getenv(secretAccessKeyENV)
-	s3Conf.S3Region = os.Getenv(regionENV)
-	s3Conf.S3Bucket = os.Getenv(bucketENV)
-	return &S3Config{s3Conf}
-}
-
-func (s S3Config) Init() *filestore.S3FS {
-	fs, err := filestore.NewFileStore(s.config)
-	if err != nil {
-		panic(err)
-	}
-	return fs.(*filestore.S3FS)
-}
-
+// FileStoreInit initializes a new filestore using environment variables for AWS credentials and the specified bucket.
+// It returns a pointer to the initialized filestore or panics if there is an error during filestore creation.
 func FileStoreInit(bucket string) *filestore.FileStore {
 	var fs filestore.FileStore
 	var err error
@@ -58,6 +43,8 @@ func FileStoreInit(bucket string) *filestore.FileStore {
 	return &fs
 }
 
+// SessionManager creates and returns a new S3Controller with a session and S3 service client configured for the AWS credentials and region specified in environment variables.
+// It returns an S3Controller instance or an error if the session creation fails.
 func SessionManager() (S3Controller, error) {
 	region := os.Getenv("AWS_REGION")
 	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
@@ -75,6 +62,9 @@ func SessionManager() (S3Controller, error) {
 	return s3Ctrl, nil
 
 }
+
+// KeyExists checks if a specified key exists in the given S3 bucket.
+// It returns true if the key exists, false otherwise, along with an error in case of failure to check.
 func KeyExists(s3Ctrl *s3.S3, bucket string, key string) (bool, error) {
 	_, err := s3Ctrl.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(bucket),
@@ -94,6 +84,8 @@ func KeyExists(s3Ctrl *s3.S3, bucket string, key string) (bool, error) {
 	return true, nil
 }
 
+// GetDownloadPresignedURL generates a presigned URL for downloading an object from S3.
+// The URL expires after the specified number of days. It returns the presigned URL or an error if the URL generation fails.
 func GetDownloadPresignedURL(s3Ctrl *s3.S3, bucket, key string, expDays int) (string, error) {
 	duration := time.Duration(expDays) * 24 * time.Hour
 	req, _ := s3Ctrl.GetObjectRequest(&s3.GetObjectInput{
@@ -103,6 +95,8 @@ func GetDownloadPresignedURL(s3Ctrl *s3.S3, bucket, key string, expDays int) (st
 	return req.Presign(duration)
 }
 
+// UploadToS3 uploads content to an S3 bucket at the specified key and returns the S3 URI of the uploaded object.
+// It takes a session, bucket name, key, content byte slice, and content type as parameters. Returns the S3 URI of the uploaded object or an error if the upload fails.
 func UploadToS3(sess *session.Session, bucket, key string, content []byte, contentType string) (string, error) {
 	// Create an uploader instance with the session
 	uploader := s3manager.NewUploader(sess)
