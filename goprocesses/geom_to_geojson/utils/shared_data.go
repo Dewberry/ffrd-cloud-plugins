@@ -62,6 +62,8 @@ const WktUSACEProj string = `PROJCRS["USA_Contiguous_Albers_Equal_Area_Conic_USG
 									ORDER[2],
 									LENGTHUNIT["US survey foot",0.304800609601219,
 										ID["EPSG",9003]]]]`
+
+// used for Kanawha_0505_Bluest.g01
 const WktUSACEProjFt37_5 string = `PROJCS["USA_Contiguous_Albers_Equal_Area_Conic_USGS_version",
 								GEOGCS["GCS_North_American_1983",
 								DATUM["D_North_American_1983",

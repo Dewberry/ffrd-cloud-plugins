@@ -15,10 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
-type S3Config struct {
-	config filestore.S3FSConfig
-}
-
 type S3Controller struct {
 	Sess  *session.Session
 	S3Svc *s3.S3
