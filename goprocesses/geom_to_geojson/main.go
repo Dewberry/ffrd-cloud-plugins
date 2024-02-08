@@ -30,7 +30,7 @@ func init() {
 func main() {
 	plug.InitLog("info")
 	allowedParams := plug.PluginParams{
-		Required: []string{"urlExpDay", "g01Key", "projection", "bucket", "outputPrefix", "geoElements"},
+		Required: []string{"url_exp_days", "g01_key", "projection", "bucket", "output_prefix", "geo_elements"},
 	}
 	params, err := plug.ParseInput(os.Args, allowedParams)
 	if err != nil {

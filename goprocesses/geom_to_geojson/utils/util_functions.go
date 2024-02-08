@@ -22,17 +22,17 @@ func AssertParams(params map[string]interface{}) (ParamTypes, error) {
 	var typedParams ParamTypes
 	var errStrings []string
 
-	if urlExpDayFloat, ok := params["urlExpDay"].(float64); ok {
+	if urlExpDayFloat, ok := params["url_exp_days"].(float64); ok {
 		typedParams.UrlExpDay = int(urlExpDayFloat)
 		plug.Log.Infof("urlExpDay cast from float: %v to int: %v", urlExpDayFloat, typedParams.UrlExpDay)
 	} else {
-		errStrings = append(errStrings, "urlExpDay must be a number")
+		errStrings = append(errStrings, "url_exp_days must be a number")
 	}
 
-	if g01key, ok := params["g01Key"].(string); ok {
+	if g01key, ok := params["g01_key"].(string); ok {
 		typedParams.G01key = g01key
 	} else {
-		errStrings = append(errStrings, "g01key must be a string")
+		errStrings = append(errStrings, "g01_key must be a string")
 	}
 
 	if projection, ok := params["projection"].(string); ok {
@@ -48,22 +48,22 @@ func AssertParams(params map[string]interface{}) (ParamTypes, error) {
 		errStrings = append(errStrings, "bucket must be a string")
 	}
 
-	if outputPrefix, ok := params["outputPrefix"].(string); ok {
+	if outputPrefix, ok := params["output_prefix"].(string); ok {
 		typedParams.OutputPrefix = outputPrefix
 	} else {
-		errStrings = append(errStrings, "outputPrefix must be a string")
+		errStrings = append(errStrings, "output_prefix must be a string")
 	}
 
-	if ge, ok := params["geoElements"].([]interface{}); ok {
+	if ge, ok := params["geo_elements"].([]interface{}); ok {
 		for _, elem := range ge {
 			if str, ok := elem.(string); ok {
 				typedParams.GeoElements = append(typedParams.GeoElements, str)
 			} else {
-				errStrings = append(errStrings, "each element in geoElements must be a string")
+				errStrings = append(errStrings, "each element in geo_elements must be a string")
 			}
 		}
 	} else {
-		errStrings = append(errStrings, "geoElements must be an array of strings")
+		errStrings = append(errStrings, "geo_elements must be an array of strings")
 	}
 
 	if len(errStrings) > 0 {
