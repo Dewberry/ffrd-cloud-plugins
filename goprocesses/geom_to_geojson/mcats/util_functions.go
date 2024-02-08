@@ -25,9 +25,10 @@ type Result struct {
 }
 
 type UploadResult struct {
-	PresignedURL string
-	S3URI        string
-	Title        string
+	PresignedURL  string
+	S3URI         string
+	Title         string
+	SpecificTitle string
 }
 
 // UploadGeoJSONToS3AndGeneratePresignedURLs uploads GeoJSON data to S3 and generates presigned URLs.
@@ -50,13 +51,12 @@ func uploadGeoJSONToS3AndGeneratePresignedURLs(collectionJson map[string][]byte,
 		if err != nil {
 			return nil, fmt.Errorf("error generating presigned URL for %s: %w", outputKey, err)
 		}
-
-		title := g01FileName + " " + key
-
+		SpecificTitle := fmt.Sprintf("%s %s", g01FileName, key)
 		results = append(results, UploadResult{
-			PresignedURL: href,
-			S3URI:        s3URI,
-			Title:        title,
+			PresignedURL:  href,
+			S3URI:         s3URI,
+			Title:         g01FileName,
+			SpecificTitle: SpecificTitle,
 		})
 	}
 

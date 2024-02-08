@@ -77,7 +77,7 @@ func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpD
 
 	for _, result := range uploadResults {
 		links = append(links, map[string]interface{}{
-			"Href":  result.PresignedURL,
+			"href":  result.PresignedURL,
 			"rel":   "presigned-url",
 			"title": result.S3URI,
 			"type":  "application/octet-stream",
@@ -85,7 +85,7 @@ func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpD
 
 		results = append(results, map[string]interface{}{
 			"href":  result.S3URI,
-			"title": result.Title,
+			"title": result.SpecificTitle,
 		})
 	}
 
@@ -130,15 +130,15 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 			field := v.Field(i)
 			fieldName := v.Type().Field(i).Name
 			if field.Kind() == reflect.Slice && field.Len() > 0 {
-				// if fieldName == "Mesh" {
-				// 	for _, feature := range features.Mesh {
-				// 		var tempArr []tools.VectorFeature
-				// 		tempArr = append(tempArr, feature)
-				// 		specificFeatures[feature.FeatureName] = tempArr
-				// 	}
-				// } else {
-				specificFeatures[fieldName] = field.Interface()
-				// }
+				if fieldName == "Mesh" {
+					for _, feature := range features.Mesh {
+						var tempArr []tools.VectorFeature
+						tempArr = append(tempArr, feature)
+						specificFeatures[feature.FeatureName] = tempArr
+					}
+				} else {
+					specificFeatures[fieldName] = field.Interface()
+				}
 
 			}
 		}
@@ -151,12 +151,12 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 		switch geoElement {
 		case "breakline":
 			specificFeatures[geoElement] = features.BreakLines
-		// case "mesh":
-		// 	for _, feature := range features.Mesh {
-		// 		var tempArr []tools.VectorFeature
-		// 		tempArr = append(tempArr, feature)
-		// 		specificFeatures[feature.FeatureName] = tempArr
-		// 	}
+		case "mesh":
+			for _, feature := range features.Mesh {
+				var tempArr []tools.VectorFeature
+				tempArr = append(tempArr, feature)
+				specificFeatures[feature.FeatureName] = tempArr
+			}
 		case "twodarea":
 			specificFeatures[geoElement] = features.TwoDAreas
 		default:
