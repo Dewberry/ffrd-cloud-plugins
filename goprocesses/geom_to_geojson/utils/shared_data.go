@@ -78,10 +78,15 @@ const WktUSACEProjFt37_5 string = `PROJCS["USA_Contiguous_Albers_Equal_Area_Coni
 								UNIT["Foot_US",0.3048006096012192]]`
 
 var AllowedGeoElements = map[string]bool{
-	"mesh":        true,
-	"breaklines":  true,
-	"twodareas":   true,
-	"bclines":     true,
-	"connections": true,
-	"all":         true,
+	"mesh":                true,
+	"breaklines":          true,
+	"twodareas":           true,
+	"bclines":             true,
+	"connections":         true,
+	"xs":                  true,
+	"rivers":              true,
+	"banks":               true,
+	"storageareas":        true,
+	"hydraulicstructures": true,
+	"all":                 true,
 }

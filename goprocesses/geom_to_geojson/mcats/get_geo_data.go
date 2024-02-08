@@ -31,11 +31,17 @@ type Geometry struct {
 
 // ProcessGeometry will extract geometry from a g01 file transform it to a geojson and upload the geojson to S3.
 // this function will return the presigned URLS of the uploaded geojsons in S3
-func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElement []string) (map[string]interface{}, error) {
+func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpDay int, g01Key, projection, bucket, outPutPrefix string, geoElements []string) (map[string]interface{}, error) {
 	finalOutput := make(map[string]interface{})
 	//Check if key and projection are provided
 	plug.Log.Infof("validating user input")
-	err := validateInputs(g01Key, projection, geoElement, bucket, s3Ctrl)
+
+	//turn everything to lower case
+	for i, s := range geoElements {
+		geoElements[i] = strings.ToLower(s)
+	}
+
+	err := validateInputs(g01Key, projection, geoElements, bucket, s3Ctrl)
 	if err != nil {
 		errMsg := fmt.Errorf("error while validating input parameter: %w", err)
 		return finalOutput, errMsg
@@ -43,7 +49,7 @@ func ProcessGeometry(fs *filestore.FileStore, s3Ctrl utils.S3Controller, urlExpD
 
 	plug.Log.Infof("Retrieving and filtering geo data")
 	//Retrieve and filter Geospatial Data
-	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElement)
+	specificFeatures, err := getFilteredGeoData(fs, g01Key, projection, geoElements)
 	if err != nil {
 		errMsg := fmt.Errorf("error while getting the geo data: %w", err)
 		return finalOutput, errMsg
@@ -120,7 +126,6 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 
 	// Filter features
 	specificFeatures := make(map[string]interface{})
-
 	features := gd.Features[path.Base(g01Key)]
 
 	if utils.StrArrContains(geoElements, "all") {
@@ -139,34 +144,64 @@ func getFilteredGeoData(fs *filestore.FileStore, g01Key, projection string, geoE
 				} else {
 					specificFeatures[fieldName] = field.Interface()
 				}
-
 			}
 		}
-		return specificFeatures, nil
+	} else {
+		// Extract the right features based on geoElement
+		for _, geoElement := range geoElements {
+			plug.Log.Infof("filtering and appending %s element", geoElement)
+			switch geoElement {
+			case "breaklines":
+				if len(features.BreakLines) > 0 {
+					specificFeatures[geoElement] = features.BreakLines
+				}
+			case "mesh":
+				for _, feature := range features.Mesh {
+					var tempArr []tools.VectorFeature
+					tempArr = append(tempArr, feature)
+					specificFeatures[feature.FeatureName] = tempArr
+				}
+			case "twodareas":
+				if len(features.TwoDAreas) > 0 {
+					specificFeatures[geoElement] = features.TwoDAreas
+				}
+			case "bclines":
+				if len(features.BCLines) > 0 {
+					specificFeatures[geoElement] = features.BCLines
+				}
+			case "connections":
+				if len(features.Connections) > 0 {
+					specificFeatures[geoElement] = features.Connections
+				}
+			case "xs":
+				if len(features.XS) > 0 {
+					specificFeatures[geoElement] = features.XS
+				}
+			case "rivers":
+				if len(features.Rivers) > 0 {
+					specificFeatures[geoElement] = features.Rivers
+				}
+			case "banks":
+				if len(features.Banks) > 0 {
+					specificFeatures[geoElement] = features.Banks
+				}
+			case "storageareas":
+				if len(features.StorageAreas) > 0 {
+					specificFeatures[geoElement] = features.StorageAreas
+				}
+			case "hydraulicstructures":
+				if len(features.HydraulicStructures) > 0 {
+					specificFeatures[geoElement] = features.HydraulicStructures
+				}
+			default:
+				return nil, fmt.Errorf("Invalid geoElement provided: %s", geoElement)
+			}
+		}
 	}
-	// Extract the right features based on geoElement
 
-	for _, geoElement := range geoElements {
-		plug.Log.Infof("filtering and appending %s element", geoElement)
-		switch geoElement {
-		case "breaklines":
-			specificFeatures[geoElement] = features.BreakLines
-		case "mesh":
-			for _, feature := range features.Mesh {
-				var tempArr []tools.VectorFeature
-				tempArr = append(tempArr, feature)
-				specificFeatures[feature.FeatureName] = tempArr
-			}
-		case "twodareas":
-			specificFeatures[geoElement] = features.TwoDAreas
-		case "bclines":
-			specificFeatures[geoElement] = features.BCLines
-		case "connections":
-			specificFeatures[geoElement] = features.Connections
-		default:
-			return nil, fmt.Errorf("Invalid geoElement provided: %s", geoElement)
-		}
-
+	// Check if specificFeatures is empty after filtering
+	if len(specificFeatures) == 0 {
+		return nil, fmt.Errorf("no features found matching the provided geoElements")
 	}
 
 	return specificFeatures, nil
