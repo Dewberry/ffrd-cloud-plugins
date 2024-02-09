@@ -2,6 +2,8 @@ github.com/Dewberry/mcat-ras v0.6.0 h1:Vh4Vmf291WlPgEenyMV/lB4Dg+aJoqoINxTDjvbal
 github.com/Dewberry/mcat-ras v0.6.0/go.mod h1:WW93Y+CI9Lm8fIwKqWW0/NSNqT44Hhe7Fiap5St59GE=
 github.com/Dewberry/papigoplug v0.1.2 h1:+hsYC/ovTqtEx45zblzYsNTAA7sqWs+lwSDMhP/RP0c=
 github.com/Dewberry/papigoplug v0.1.2/go.mod h1:fJgF2svMnUVHiHxZYhm/1SFN8QwbncZ9fQn+zTHSQIA=
+github.com/Dewberry/papigoplug v0.1.3 h1:3q1sa+dxpOUpuikaJLuiKGmi0FCvKFMbYHZTIRB1leU=
+github.com/Dewberry/papigoplug v0.1.3/go.mod h1:4Qtw1KJG7JkbgPjW3ibF7Cvz9Z2lKwv8mTNVKg7VWxk=
 github.com/USACE/filestore v0.1.4 h1:dzHQCOgLe9685sRsLs0Fru7yDA6wa9Tqe5zrAGZ20I4=
 github.com/USACE/filestore v0.1.4/go.mod h1:5fkTyuW25MBqeX0oKr6Yf3N3wdUTMLOq+jLcDrwfc4Y=
 github.com/aws/aws-sdk-go v1.31.0/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=

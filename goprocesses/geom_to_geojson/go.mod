@@ -6,7 +6,7 @@ toolchain go1.21.6
 
 require (
 	github.com/Dewberry/mcat-ras v0.6.0
-	github.com/Dewberry/papigoplug v0.1.2
+	github.com/Dewberry/papigoplug v0.1.3
 	github.com/aws/aws-sdk-go v1.46.4
 	github.com/dewberry/gdal v0.3.4
 	github.com/joho/godotenv v1.5.1
