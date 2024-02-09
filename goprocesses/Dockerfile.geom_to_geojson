@@ -1,0 +1,21 @@
+FROM golang:1.21.6-alpine as dev
+
+RUN apk add --no-cache \
+    pkgconfig \
+    gcc \
+    libc-dev \
+    git \
+    gdal-dev \
+    geos-dev \
+    gdal-tools
+
+ENV PATH="/usr/local/go/bin:/root/go/bin:${PATH}"
+
+COPY . /app
+WORKDIR /app/geom_to_geojson
+
+RUN go mod tidy
+
+RUN go build -o main main.go
+
+ENTRYPOINT ["./main"]

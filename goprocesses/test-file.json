@@ -1,0 +1,12 @@
+{
+    "url_exp_days": 7,
+    "g01_key": "antonTestingFolder/testing_files/Kanawha_0505_Bluest.g01",
+    "projection": "WktUSACEProjFt37_5",
+    "bucket": "ffrd-trinity",
+    "output_prefix": "antonTestingFolder/testing_files/geojson/mcats5",
+    "geo_elements": [
+        "XS",
+        "MeSh",
+        "BcLiNeS"
+    ]
+}
